@@ -3,6 +3,8 @@ from PIL import Image
 import time
 import matplotlib.pyplot as plt
 
+# - / - / - / - / - / - / - / mapTerrain / - / - / - / - / - / - / - /
+
 def mapTerrain(image):
     terrain__costs = {
     # Terrain type	             Color on map                Movecost
@@ -48,30 +50,50 @@ def mapTerrain(image):
 
             dict[(x, y)] = tempCost
 
+    return dict
 
-#def mapElevation(elevationFile): 
+# - / - / - / - / - / - / - / mapElevation / - / - / - / - / - / - / - /
+
+def mapElevation(elevationFile): 
     # The elevation file corresponds to an area of 400x500 
     # (500 lines of 400 double values, each representing an 
     # elevation in meters). To address the difference in width 
     # between the elevation and terrain files you should just ignore
     # the last five values on each line of the elevation file.
+    with open(elevationFile, "r") as file:
+        lines = file.readLines()
+        for line in lines:
+            words = line.strip().split()
+            for word in words:
+                
+
+
+# - / - / - / - / - / - / - / generateRoute / - / - / - / - / - / - / - /
 
 #def generateRoute(pathFile):
+
+# - / - / - / - / - / - / - / generatePath / - / - / - / - / - / - / - /
 
 #def generatePath(terrainMap, elevationMap, route):
     # Each pixel corresponds to an area of
     # 10.29 m in longitude (X) 
     # 7.55 m in latitude (Y)
 
+# - / - / - / - / - / - / - / calculatePathLength / - / - / - / - / - / - / - /
+
 #def calculatePathLength(path): 
     # Each pixel corresponds to an area of
     # 10.29 m in longitude (X) 
     # 7.55 m in latitude (Y)
 
+# - / - / - / - / - / - / - / generateOutputImage / - / - / - / - / - / - / - /
+
 #def generateOutputImage(path, image, outputImageFilename): 
     # You should output an image of the input map with the optimal path
     #  drawn on top of it. This path should be 1 pixel wide and have the
     #  RGB value: #a146dd (161, 70, 221) 
+
+# - / - / - / - / - / - / - / main / - / - / - / - / - / - / - /
 
 def main():
     start = time.time()
@@ -94,7 +116,7 @@ def main():
     # Program should create a png image file of the  input map with the
     # optimal path drawn on top of it
 
-    # - / - / - / - / - / - / - / FUNCTIONS / - / - / - / - / - / - / - /
+    # -------------------- FUNCTIONS ----------------
 
     # function to map terrain image file to a dictionary of pixels and
     # corresponding terrain difficulty. Returns a dictionary
