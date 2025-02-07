@@ -1,40 +1,74 @@
 import sys
 from PIL import Image
 import time
+import matplotlib.pyplot as plt
 
 def mapTerrain(image):
+    terrain__costs = {
+    # Terrain type	             Color on map                Movecost
+    # Open land	            #F89412 (248,148,18)        1.15
+    (248, 148, 18):1.15,
+    # Rough meadow	            #FFC000 (255,192,0)	        1.3
+    (255, 192, 0):1.3,
+    # Easy movement forest     #FFFFFF (255,255,255)       1.2
+    (255, 255, 255):1.2,
+    # Slow run forest	        #02D03C (2,208,60)          1.25
+    (2, 208, 60):1.25,
+    # Walk forest	            #028828 (2,136,40)          1.6
+    (2, 136, 40):1.6,
+    # Impassible vegetation	#054918 (5,73,24)           0
+    (5, 73, 24):0,
+    # Lake/Swamp/Marsh	        #0000FF (0,0,255)           2
+    (0, 0, 255):2,
+    # Paved road	            #473303 (71,51,3)           1
+    (71, 51, 3):1,
+    # Footpath	                #000000 (0,0,0)             1.1
+    (0, 0, 0):1.1,
+    # Out of bounds	        #CD0065 (205,0,101)	        0
+    (205, 0, 101):0
+    # - / - / - / - / - / - / - / - / - / - / - / - /
+    }
 
-def mapElevation(elevationFile): 
+
+    image = image.convert("RGB")
+    im = image.load()
+    image.save("debug_image.png")
+    dict = {}
+    tempCost = None
+    tempColor = None
+    for x in range(image.width):
+        for y in range(image.height): 
+            tempColor = im[x, y]
+            tempCost = terrain__costs.get(tempColor, None)
+        
+            if tempCost is None:
+                print(image.mode)
+                print(f"Matt's ERROR: Unrecognized terrain color {tempColor} at {x, y}")
+                return
+
+            dict[(x, y)] = tempCost
+
+
+#def mapElevation(elevationFile): 
     # The elevation file corresponds to an area of 400x500 
     # (500 lines of 400 double values, each representing an 
     # elevation in meters). To address the difference in width 
     # between the elevation and terrain files you should just ignore
     # the last five values on each line of the elevation file.
 
-def generateRoute(pathFile):
-    # Terrain type	            Color on map	Photo (legend)
-    # Open land	           #F89412 (248,148,18)	A
-    # Rough meadow	           #FFC000 (255,192,0)	B
-    # Easy movement forest	#FFFFFF (255,255,255)	C · D
-    # Slow run forest	#02D03C (2,208,60)	E
-    # Walk forest	#028828 (2,136,40)	F
-    # Impassible vegetation	#054918 (5,73,24)	G
-    # Lake/Swamp/Marsh	#0000FF (0,0,255)	H · I · J
-    # Paved road	#473303 (71,51,3)	K · L
-    # Footpath	#000000 (0,0,0)	M · N
-    # Out of bounds	#CD0065 (205,0,101)	
+#def generateRoute(pathFile):
 
-def generatePath(terrainMap, elevationMap, route):
+#def generatePath(terrainMap, elevationMap, route):
     # Each pixel corresponds to an area of
     # 10.29 m in longitude (X) 
     # 7.55 m in latitude (Y)
 
-def calculatePathLength(path): 
+#def calculatePathLength(path): 
     # Each pixel corresponds to an area of
     # 10.29 m in longitude (X) 
     # 7.55 m in latitude (Y)
 
-def generateOutputImage(path, image, outputImageFilename): 
+#def generateOutputImage(path, image, outputImageFilename): 
     # You should output an image of the input map with the optimal path
     #  drawn on top of it. This path should be 1 pixel wide and have the
     #  RGB value: #a146dd (161, 70, 221) 
@@ -52,6 +86,7 @@ def main():
     pathFile = args[2]
     outputImageFilename = args[3]  
 
+    
     image = Image.open(terrainImage)
 
     # Program should return the total path length in meters to the terminal
