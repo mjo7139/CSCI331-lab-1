@@ -2,7 +2,6 @@ import sys
 from PIL import Image
 
 
-
 def main():
     args = sys.argv[1:]
 
@@ -12,7 +11,9 @@ def main():
     terrainImage = args[0]
     elevationFile = args[1]
     pathFile = args[2]
-    outputImageFilename = args[3]   
+    outputImageFilename = args[3]  
+
+    image = Image.open(terrainImage)
 
     # Program should return the total path length in meters to the terminal
 
@@ -20,10 +21,6 @@ def main():
     # optimal path drawn on top of it
 
     # - / - / - / - / - / - / - / FUNCTIONS / - / - / - / - / - / - / - /
-    
-    # function to create a pillow Image object from the image filename
-    # returns a pillow image object
-    image = createImage(terrainImage)
 
     # function to map terrain image file to a dictionary of pixels and
     # corresponding terrain difficulty. Returns a dictionary
