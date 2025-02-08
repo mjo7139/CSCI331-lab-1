@@ -137,14 +137,16 @@ def newPoint(terrainMap, elevationMap, state, newPointPos):
 
     #                                 [0]       [1]     [2]     [3]
     # a tuple representing pixels (position, parent, g value, h value)
-    newPoint = (None, None, None, None)
-    newPoint[0] = newPointPos
-    newPoint[1] = state[0]
-    newPoint[2] = (state[0][2]) + (terrainMap[newPointPos] * get3Dist(state[0][0], newPointPos, elevationMap))
-    newPoint[3] = get3Dist(newPointPos, state[1], elevationMap)
+    newPoint = (
+        newPointPos, 
+        state[0], 
+        (state[0][2]) + (terrainMap[newPointPos] * get3Dist(state[0][0], newPointPos, elevationMap)), 
+        get3Dist(newPointPos, state[1], elevationMap))
 
-    heapq.heappush(state[5], ( (newPoint[2]+newPoint[3]), (newPointPos)))
+
+    heapq.heappush(state[3], ( (newPoint[2]+newPoint[3]), (newPointPos)))
     state[4].add(newPoint)
+    state[2].add(newPointPos)
     return state
 
 
@@ -162,7 +164,7 @@ def checkReplicte(state, neighborPos, elevationMap, terrainMap):
                 state[4].remove(pixel)
                 state[4].add((neighborPos, state[0], newG, newH))
                 state[3].remove((pixel[2]+pixel[3], pixel[0]))
-                state[3].add(newF, neighborPos)
+                state[3].append((newF, neighborPos))
                 heapq.heapify(state[3])
                 return state
             else:
@@ -200,32 +202,48 @@ def considerNeighbor(terrainMap, elevationMap, state, neighborPos):
 
     
             
-def step(terrainMap, elevationMap, state):
+def step1(terrainMap, elevationMap, state):
     #                                    [0]       [1]      [2]    [3]     [4]     [5]
     # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
 
-    pos = state[0][0]
+    curPixel = state[0]
+    curPos = curPixel[0]
+    
 
-    north = pos
+    north = curPos
     north = (north[0] - 1, north[1])
     state = considerNeighbor(terrainMap, elevationMap, state, north)
     
-    east = pos
+    east = curPos
     east = (east[0], east[1] + 1)
     state = considerNeighbor(terrainMap, elevationMap, state, east)
 
-    south = pos
+    south = curPos
     south = (south[0] + 1, south[1])
     state = considerNeighbor(terrainMap, elevationMap, state, south)
 
-    west = pos
+    west = curPos
     west = (west[0], west[1] - 1)
     state = considerNeighbor(terrainMap, elevationMap, state, west)
 
     return state
 
-    
+def step2(state):
+    #                                    [0]       [1]      [2]    [3]     [4]     [5]
+    # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
+    nextUp = heapq.heappop(state[3])
+    #print(nextUp)
 
+    # find the next pixel in the tupleset
+    # -------- TO BE OPTIMIZED --------------
+    # yes i know iterating over a set is slow but were gonna deal with it for now
+    for pixel in state[4]:
+        if pixel[0] == nextUp[1]:
+            state[0] = pixel
+            return state
+        
+    print("Matt's Error: couldnt find next stepping pixel")
+    return
 
 def nextLeg(terrainMap, elevationMap, pos, target):
     # should return a deque of the final path taken from point A to point B
@@ -246,13 +264,22 @@ def nextLeg(terrainMap, elevationMap, pos, target):
 
     #                                    [0]       [1]      [2]    [3]     [4]     [5]
     # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
-    state = (curPixel, target, check, posQ, tupleSet, path)
+    # changed (...) to [...]
+    state = [curPixel, target, check, posQ, tupleSet, path]
 
    
 
-    while state[0] != state[1]:
-        # step needs to return a new info including updated position, and data structs
-        state = step(terrainMap, elevationMap, state)
+    while state[0][0] != state[1]:
+        # step1 add's all of the new ,neighbors to the queue
+        #print("curloc + " + str(state[0][0]))
+        #print("targetloc + " + str(state[1][0]))
+        state = step1(terrainMap, elevationMap, state)
+
+        state = step2(state)
+        
+
+        # debugging: print the step each step
+        #print(state[0])
 
     # retrace the path we took
     #state[5] = retracePath(state)
@@ -266,6 +293,7 @@ def generatePath(terrainMap, elevationMap, destinations):
     # Ok, we have a list of locations to visit on out "destinations" including a 
     # starting point and an ending point. First lets record our current position
     # i.e. the first point on our route
+    
     pos = destinations.pop()
 
     # lets create a deque object to keep track of the routes taken, this should only
@@ -275,6 +303,7 @@ def generatePath(terrainMap, elevationMap, destinations):
     
     while len(destinations) >= 1:
         target = destinations.pop()
+        print(target)
         # find the optimal path for this leg and add it to the route
         route.appendleft(nextLeg(terrainMap, elevationMap, pos, target))
         # we must now continue the race from our new position which was our target
