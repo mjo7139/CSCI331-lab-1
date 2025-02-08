@@ -21,16 +21,16 @@ def mapTerrain(image):
     (2, 208, 60):1.25,
     # Walk forest	            #028828 (2,136,40)          1.6
     (2, 136, 40):1.6,
-    # Impassible vegetation	#054918 (5,73,24)           0
-    (5, 73, 24):0,
+    # Impassible vegetation	#054918 (5,73,24)           999
+    (5, 73, 24):999,
     # Lake/Swamp/Marsh	        #0000FF (0,0,255)           2
     (0, 0, 255):2,
     # Paved road	            #473303 (71,51,3)           1
     (71, 51, 3):1,
     # Footpath	                #000000 (0,0,0)             1.1
     (0, 0, 0):1.1,
-    # Out of bounds	        #CD0065 (205,0,101)	        0
-    (205, 0, 101):0
+    # Out of bounds	        #CD0065 (205,0,101)	        999
+    (205, 0, 101):999
     # - / - / - / - / - / - / - / - / - / - / - / - /
     }
 
@@ -131,36 +131,52 @@ def get3Dist(pixelA, pixelB, elevationMap):
     dist = math.sqrt(sum1 + sum2 + sum3)
     return dist
 
-def generateG(pixel, elevationMap):
-    # function takes a 2VAL tuple ()
+def newPoint(terrainMap, elevationMap, state, newPointPos): 
+    #                                    [0]       [1]      [2]    [3]     [4]     [5]
+    # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
 
-def generateF(pixelPos, pixelG, elevationMap, targetPos):
-    # function generates an f value
-    # -------------------- ISSUE FOR LATER ------------------
-    # were going to run into problems because the get3dDist needs to be
-    # the absolute value distance
-    f = pixelG + get3Dist(targetPos, pixelPos, elevationMap)
+    #                                 [0]       [1]     [2]     [3]
+    # a tuple representing pixels (position, parent, g value, h value)
+    newPoint = (None, None, None, None)
+    newPoint[0] = newPointPos
+    newPoint[1] = state[0]
+    newPoint[2] = (state[0][2]) + (terrainMap[newPointPos] * get3Dist(state[0][0], newPointPos, elevationMap))
+    newPoint[3] = get3Dist(newPointPos, state[1], elevationMap)
+
+    heapq.heappush(state[5], ( (newPoint[2]+newPoint[3]), (newPointPos)))
+    state[4].add(newPoint)
+    return state
 
 
-def checkAndReplace(tupleSet, newLoc, newParent, newG, newH): 
-    # returns a tuple of (tupleSet, boolean)
-    # the boolean represents if something was changed
-    for pixel in tupleSet:
-        if pixel[0] == newLoc:
-            if (pixel[2]+pixel[3]) < newF:
-                tupleSet.remove(pixel)
-                tupleSet.add((newLoc, newParent, newG, newH))
-                return (tupleSet, True)
+def checkReplicte(state, neighborPos, elevationMap, terrainMap): 
+    #                                    [0]       [1]      [2]    [3]     [4]     [5]
+    # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
+
+    # returns a tuple of state
+    for pixel in state[4]:
+        if pixel[0] == neighborPos:
+            newG = (state[0][2]) + (terrainMap[neighborPos] * get3Dist(state[0][0], neighborPos, elevationMap))
+            newH = get3Dist(neighborPos, state[1], elevationMap)
+            newF = newG + newH
+            if (pixel[2]+pixel[3]) > newF: 
+                state[4].remove(pixel)
+                state[4].add((neighborPos, state[0], newG, newH))
+                state[3].remove((pixel[2]+pixel[3], pixel[0]))
+                state[3].add(newF, neighborPos)
+                heapq.heapify(state[3])
+                return state
             else:
-                return (tupleSet, False)
+                return state
             
 
     print("Matt Error: LOOKING FOR NONEXISTANT PIXEL")
-    return (tupleSet, False)
+    return state
 
 def considerNeighbor(terrainMap, elevationMap, state, neighborPos):
-    # state is                           [0]      [1]    [2]    [3]     [4]     [5]
-    # a tuple representing our state (position, target, check, posQ, tupleSet, path)
+    #                                    [0]       [1]      [2]    [3]     [4]     [5]
+    # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
+
+    # we should only be adding to the posQ in this function and below
 
     # is the neighbor a valid location?
     if neighborPos[0] < 0 or neighborPos[0] >= 395:
@@ -168,34 +184,42 @@ def considerNeighbor(terrainMap, elevationMap, state, neighborPos):
     if neighborPos[1] < 0 or neighborPos[1] >= 500:
         return state
     # is the neighbor even passible?
-    if terrainMap[neighborPos] <= 0:
+    if terrainMap[neighborPos] >= 998:
         return state
     # have we checked this point already?
     if neighborPos in state[2]:
+        # ok it has been checked. switch our the old with the new replicate 
+        # if the new f value is lower than the old ones
+        state = checkReplicte(state, neighborPos, elevationMap, terrainMap)
+        return state
+    
+    # else we have a new point which is at a valid location and is passible and is not a replicate
+    state = newPoint(terrainMap, elevationMap, state, neighborPos)
+    return state
 
 
     
             
 def step(terrainMap, elevationMap, state):
-    # state is                           [0]      [1]    [2]    [3]     [4]     [5]
-    # a tuple representing our state (position, target, check, posQ, tupleSet, path)
+    #                                    [0]       [1]      [2]    [3]     [4]     [5]
+    # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
 
-    pos = state[0]
+    pos = state[0][0]
 
     north = pos
-    north[1] -= 1
+    north = (north[0] - 1, north[1])
     state = considerNeighbor(terrainMap, elevationMap, state, north)
     
     east = pos
-    east[0] += 1
+    east = (east[0], east[1] + 1)
     state = considerNeighbor(terrainMap, elevationMap, state, east)
 
     south = pos
-    south[1] += 1
+    south = (south[0] + 1, south[1])
     state = considerNeighbor(terrainMap, elevationMap, state, south)
 
     west = pos
-    west[0] -= 1
+    west = (west[0], west[1] - 1)
     state = considerNeighbor(terrainMap, elevationMap, state, west)
 
     return state
@@ -207,23 +231,31 @@ def nextLeg(terrainMap, elevationMap, pos, target):
     # should return a deque of the final path taken from point A to point B
     path = deque()
     # a set of positions representing pixels (position)
-    check = {}
+    check = set()
     #                                         [0]       [1]     [2]     [3]
     # a set of tuples representing pixels (position, parent, g value, h value)
-    tupleSet = {}
+    tupleSet = set()
     #                                         [0]       [1]   
     # a heap of tuples representing pixels (f value, position)
     posQ = []
-    #                                    [0]      [1]    [2]    [3]     [4]     [5]
-    # a tuple representing our state (position, target, check, posQ, tupleSet, path)
-    state = (pos, target, check, posQ, tupleSet, path)
+
+    # lets add the starting location to our structures
+    check.add(pos)
+    curPixel = (pos, None, 0, get3Dist(pos, target, elevationMap))
+    tupleSet.add(curPixel)
+
+    #                                    [0]       [1]      [2]    [3]     [4]     [5]
+    # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
+    state = (curPixel, target, check, posQ, tupleSet, path)
+
+   
 
     while state[0] != state[1]:
         # step needs to return a new info including updated position, and data structs
         state = step(terrainMap, elevationMap, state)
 
     # retrace the path we took
-    state[5] = retracePath(state)
+    #state[5] = retracePath(state)
 
     # return the path
     return state[5]
