@@ -3,6 +3,8 @@ from PIL import Image
 import time
 import matplotlib.pyplot as plt
 from collections import deque
+import heapq
+import math
 
 # - / - / - / - / - / - / - / mapTerrain / - / - / - / - / - / - / - /
 
@@ -108,10 +110,96 @@ def generateRoute(pathFile):
 
 # - / - / - / - / - / - / - / generatePath / - / - / - / - / - / - / - /
 
-#def generatePath(terrainMap, elevationMap, route):
+def get3Dist(pixelA, pixelB, elevationMap):
     # Each pixel corresponds to an area of
     # 10.29 m in longitude (X) 
     # 7.55 m in latitude (Y)
+    aX, aY = pixelA
+    bX, bY = pixelB
+    aZ = elevationMap[pixelA]
+    bZ = elevationMap[pixelB]
+
+    netX = (bX - aX) * 10.29
+    netY = (bY - aY) * 7.55
+    netZ = bZ - aZ
+
+    sum1 = math.pow(netX, 2)
+    sum2 = math.pow(netY, 2)
+    sum3 = math.pow(netZ, 2)
+
+    dist = math.sqrt(sum1 + sum2 + sum3)
+    return dist
+
+def generateF(pixelPos, pixelG, elevationMap, targetPos):
+    # function generates an f value
+    # -------------------- ISSUE FOR LATER ------------------
+    # were going to run into problems because the get3dDist needs to be
+    # the absolute value distance
+    f = pixelG + get3Dist(targetPos, pixelPos, elevationMap)
+
+
+
+def generateNeighbors(terrainMap, elevationMap, pos, target): 
+
+    # this function  retuns a list of four tuples where the first element is 
+    # the f value and the 2nd element is the pixel coordinates
+
+
+def nextLeg(terrainMap, elevationMap, pos, target):
+    # when thinking about the parent list and other things, i realized 
+    # i would have a huge issue where heuristic values would be difficult
+    # to overwrite. However I can solve many, many issues by limiting
+    # the scope of everything from one point to another and simply repeating
+    # this process
+
+    # should return a deque of the final path taken from point A to point B
+    path = deque()
+
+    # !!!!!!!!!!!!!!!! TB DONE !!!!!!!!!!!!!!!!!
+    # lets create a set of 4VAL tuples representing information for chekced pixels
+    # the 4VAL tuple should include (position, parent, f value, g value)
+
+    # our queue which is a heap of 2VAL tuples representing pixels where
+    # (f value, position)
+    prioQ = []
+
+    while pos != target:
+        # lets find each of the neighboring pixels and add them to a list to
+        # be added to the heap, I need to make sure they arent on the heap though
+
+        # retuns a list of tuples representing pixels (f value, position)
+        toAdd = generateNeighbors(terrainMap, elevationMap, pos, target)
+        for pixel in toAdd:
+            if pixel not in parentDict:
+                heapq.heappush(prioQ, pixel)
+                parentDict.add((pixel[1], pos))
+            elif pixel[0] < 
+
+        # now that we have added all neighbors to the prioQ we are safe to change
+        # our position to the next minnimum value node in the queue
+
+
+def generatePath(terrainMap, elevationMap, destinations):
+
+    # Ok, we have a list of locations to visit on out "destinations" including a 
+    # starting point and an ending point. First lets record our current position
+    # i.e. the first point on our route
+    pos = destinations.pop()
+
+    # lets create a deque object to keep track of the routes taken, this should only
+    # be updated once we reach a destination
+    route = deque()
+
+    
+    while len(destinations) >= 1:
+        target = destinations.pop()
+        # find the optimal path for this leg and add it to the route
+        route.appendleft(nextLeg(terrainMap, elevationMap, pos, target))
+        # we must now continue the race from our new position which was our target
+        pos = target
+
+
+
 
 # - / - / - / - / - / - / - / calculatePathLength / - / - / - / - / - / - / - /
 
@@ -167,7 +255,7 @@ def main():
 
     # the main function which will generate the ideal path to follow using
     # a*. returns a deque object of the pixels visited, in order
-    #path = generatePath(terrainMap, elevationMap, route)
+    path = generatePath(terrainMap, elevationMap, route)
 
     # function to calculate the total path length to the terminal
     #pathLength = calulatePathLength(path)
