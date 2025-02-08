@@ -2,6 +2,7 @@ import sys
 from PIL import Image
 import time
 import matplotlib.pyplot as plt
+from collections import deque
 
 # - / - / - / - / - / - / - / mapTerrain / - / - / - / - / - / - / - /
 
@@ -85,7 +86,25 @@ def mapElevation(elevationFile):
 
 # - / - / - / - / - / - / - / generateRoute / - / - / - / - / - / - / - /
 
-#def generateRoute(pathFile):
+def generateRoute(pathFile):
+    #deque object to be returned
+    queue = deque()
+    with open(pathFile, "r") as file:
+        lines = file.readlines()
+        for line in lines:
+            line.strip()
+            # a deque is defaulted to popping off of the right side
+            # and so we want to append to the left side each time so that
+            # the first line / coordinate appended ends up at the right 
+            # side at the end
+            temp = line.split()
+            x = int(temp[0])
+            y = int(temp[1])
+            queue.appendleft((x, y))
+
+    return queue
+
+
 
 # - / - / - / - / - / - / - / generatePath / - / - / - / - / - / - / - /
 
@@ -144,7 +163,7 @@ def main():
 
     # function to generate a deque object of the locations to visit. 
     # returns a deque object
-    #route = generateRoute(pathFile) 
+    route = generateRoute(pathFile) 
 
     # the main function which will generate the ideal path to follow using
     # a*. returns a deque object of the pixels visited, in order
