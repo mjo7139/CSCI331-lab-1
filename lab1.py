@@ -111,6 +111,7 @@ def generateRoute(pathFile):
 # - / - / - / - / - / - / - / generatePath / - / - / - / - / - / - / - /
 
 def get3Dist(pixelA, pixelB, elevationMap):
+    # ! CHECK !
     # Each pixel corresponds to an area of
     # 10.29 m in longitude (X) 
     # 7.55 m in latitude (Y)
@@ -119,9 +120,9 @@ def get3Dist(pixelA, pixelB, elevationMap):
     aZ = elevationMap[pixelA]
     bZ = elevationMap[pixelB]
 
-    netX = (bX - aX) * 10.29
-    netY = (bY - aY) * 7.55
-    netZ = bZ - aZ
+    netX = abs(bX - aX) * 10.29
+    netY = abs(bY - aY) * 7.55
+    netZ = abs(bZ - aZ)
 
     sum1 = math.pow(netX, 2)
     sum2 = math.pow(netY, 2)
@@ -129,6 +130,9 @@ def get3Dist(pixelA, pixelB, elevationMap):
 
     dist = math.sqrt(sum1 + sum2 + sum3)
     return dist
+
+def generateG(pixel, elevationMap):
+    # function takes a 2VAL tuple ()
 
 def generateF(pixelPos, pixelG, elevationMap, targetPos):
     # function generates an f value
@@ -138,12 +142,27 @@ def generateF(pixelPos, pixelG, elevationMap, targetPos):
     f = pixelG + get3Dist(targetPos, pixelPos, elevationMap)
 
 
-
 def generateNeighbors(terrainMap, elevationMap, pos, target): 
 
     # this function  retuns a list of four tuples where the first element is 
     # the f value and the 2nd element is the pixel coordinates
 
+def checkAndReplace(tupleSet, newLoc, newParent, newG, newH): 
+    # returns a tuple of (tupleSet, boolean)
+    # the boolean represents if something was changed
+    for pixel in tupleSet:
+        if pixel[0] == newLoc:
+            if (pixel[2]+pixel[3]) < newF:
+                tupleSet.remove(pixel)
+                tupleSet.add((newLoc, newParent, newG, newH))
+                return (tupleSet, True)
+            else:
+                return (tupleSet, False)
+            
+
+    print("Matt Error: LOOKING FOR NONEXISTANT PIXEL")
+    return (tupleSet, False)
+            
 
 def nextLeg(terrainMap, elevationMap, pos, target):
     # when thinking about the parent list and other things, i realized 
@@ -155,32 +174,43 @@ def nextLeg(terrainMap, elevationMap, pos, target):
     # should return a deque of the final path taken from point A to point B
     path = deque()
 
+    # Omg so many data structures for the same data. I think i need a set
+    # containging just the position of the pixels that have been checked to maintain 
+    # O(1) containment checking
+    checkSet = {}
+
     # !!!!!!!!!!!!!!!! TB DONE !!!!!!!!!!!!!!!!!
     # lets create a set of 4VAL tuples representing information for chekced pixels
-    # the 4VAL tuple should include (position, parent, f value, g value)
+    # the 4VAL tuple should include (position, parent, g value, h value)
+    tupleSet = {}
 
     # our queue which is a heap of 2VAL tuples representing pixels where
     # (f value, position)
-    prioQ = []
+    tupleHeap = []
 
     while pos != target:
         # lets find each of the neighboring pixels and add them to a list to
         # be added to the heap, I need to make sure they arent on the heap though
 
-        # retuns a list of tuples representing pixels (f value, position)
+        #                                                [0]       [1]     [2]     [3]
+        # retuns a list of tuples representing pixels (position, parent, g value, h value)
         toAdd = generateNeighbors(terrainMap, elevationMap, pos, target)
         for pixel in toAdd:
-            if pixel not in parentDict:
-                heapq.heappush(prioQ, pixel)
-                parentDict.add((pixel[1], pos))
-            elif pixel[0] < 
+            if pixel[0] not in checkSet:
+                heapq.heappush(tupleHeap, (pixel[2]+pixel[3], pixel[0]))
+                tupleSet.add(pixel)
+                checkSet.add(pixel[0])
+            else:
+                # pixel has already been checked before
+                # is the new f value better? 
+                tupleSet = checkAndReplace( tupleSet, pixel[0], pos, pixel[2], pixel[3])
 
         # now that we have added all neighbors to the prioQ we are safe to change
         # our position to the next minnimum value node in the queue
 
 
 def generatePath(terrainMap, elevationMap, destinations):
-
+    # ! CHECK !
     # Ok, we have a list of locations to visit on out "destinations" including a 
     # starting point and an ending point. First lets record our current position
     # i.e. the first point on our route
@@ -197,6 +227,8 @@ def generatePath(terrainMap, elevationMap, destinations):
         route.appendleft(nextLeg(terrainMap, elevationMap, pos, target))
         # we must now continue the race from our new position which was our target
         pos = target
+
+    return route
 
 
 
