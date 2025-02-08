@@ -142,11 +142,6 @@ def generateF(pixelPos, pixelG, elevationMap, targetPos):
     f = pixelG + get3Dist(targetPos, pixelPos, elevationMap)
 
 
-def generateNeighbors(terrainMap, elevationMap, pos, target): 
-
-    # this function  retuns a list of four tuples where the first element is 
-    # the f value and the 2nd element is the pixel coordinates
-
 def checkAndReplace(tupleSet, newLoc, newParent, newG, newH): 
     # returns a tuple of (tupleSet, boolean)
     # the boolean represents if something was changed
@@ -162,51 +157,76 @@ def checkAndReplace(tupleSet, newLoc, newParent, newG, newH):
 
     print("Matt Error: LOOKING FOR NONEXISTANT PIXEL")
     return (tupleSet, False)
+
+def considerNeighbor(terrainMap, elevationMap, state, neighborPos):
+    # state is                           [0]      [1]    [2]    [3]     [4]     [5]
+    # a tuple representing our state (position, target, check, posQ, tupleSet, path)
+
+    # is the neighbor a valid location?
+    if neighborPos[0] < 0 or neighborPos[0] >= 395:
+        return state
+    if neighborPos[1] < 0 or neighborPos[1] >= 500:
+        return state
+    # is the neighbor even passible?
+    if terrainMap[neighborPos] <= 0:
+        return state
+    # have we checked this point already?
+    if neighborPos in state[2]:
+
+
+    
             
+def step(terrainMap, elevationMap, state):
+    # state is                           [0]      [1]    [2]    [3]     [4]     [5]
+    # a tuple representing our state (position, target, check, posQ, tupleSet, path)
+
+    pos = state[0]
+
+    north = pos
+    north[1] -= 1
+    state = considerNeighbor(terrainMap, elevationMap, state, north)
+    
+    east = pos
+    east[0] += 1
+    state = considerNeighbor(terrainMap, elevationMap, state, east)
+
+    south = pos
+    south[1] += 1
+    state = considerNeighbor(terrainMap, elevationMap, state, south)
+
+    west = pos
+    west[0] -= 1
+    state = considerNeighbor(terrainMap, elevationMap, state, west)
+
+    return state
+
+    
+
 
 def nextLeg(terrainMap, elevationMap, pos, target):
-    # when thinking about the parent list and other things, i realized 
-    # i would have a huge issue where heuristic values would be difficult
-    # to overwrite. However I can solve many, many issues by limiting
-    # the scope of everything from one point to another and simply repeating
-    # this process
-
     # should return a deque of the final path taken from point A to point B
     path = deque()
-
-    # Omg so many data structures for the same data. I think i need a set
-    # containging just the position of the pixels that have been checked to maintain 
-    # O(1) containment checking
-    checkSet = {}
-
-    # !!!!!!!!!!!!!!!! TB DONE !!!!!!!!!!!!!!!!!
-    # lets create a set of 4VAL tuples representing information for chekced pixels
-    # the 4VAL tuple should include (position, parent, g value, h value)
+    # a set of positions representing pixels (position)
+    check = {}
+    #                                         [0]       [1]     [2]     [3]
+    # a set of tuples representing pixels (position, parent, g value, h value)
     tupleSet = {}
+    #                                         [0]       [1]   
+    # a heap of tuples representing pixels (f value, position)
+    posQ = []
+    #                                    [0]      [1]    [2]    [3]     [4]     [5]
+    # a tuple representing our state (position, target, check, posQ, tupleSet, path)
+    state = (pos, target, check, posQ, tupleSet, path)
 
-    # our queue which is a heap of 2VAL tuples representing pixels where
-    # (f value, position)
-    tupleHeap = []
+    while state[0] != state[1]:
+        # step needs to return a new info including updated position, and data structs
+        state = step(terrainMap, elevationMap, state)
 
-    while pos != target:
-        # lets find each of the neighboring pixels and add them to a list to
-        # be added to the heap, I need to make sure they arent on the heap though
+    # retrace the path we took
+    state[5] = retracePath(state)
 
-        #                                                [0]       [1]     [2]     [3]
-        # retuns a list of tuples representing pixels (position, parent, g value, h value)
-        toAdd = generateNeighbors(terrainMap, elevationMap, pos, target)
-        for pixel in toAdd:
-            if pixel[0] not in checkSet:
-                heapq.heappush(tupleHeap, (pixel[2]+pixel[3], pixel[0]))
-                tupleSet.add(pixel)
-                checkSet.add(pixel[0])
-            else:
-                # pixel has already been checked before
-                # is the new f value better? 
-                tupleSet = checkAndReplace( tupleSet, pixel[0], pos, pixel[2], pixel[3])
-
-        # now that we have added all neighbors to the prioQ we are safe to change
-        # our position to the next minnimum value node in the queue
+    # return the path
+    return state[5]
 
 
 def generatePath(terrainMap, elevationMap, destinations):
