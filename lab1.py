@@ -60,11 +60,26 @@ def mapElevation(elevationFile):
     # elevation in meters). To address the difference in width 
     # between the elevation and terrain files you should just ignore
     # the last five values on each line of the elevation file.
+
+    x = 0
+    y = 0
+    dict = {}
+
     with open(elevationFile, "r") as file:
-        lines = file.readLines()
+        lines = file.readlines()
         for line in lines:
             words = line.strip().split()
             for word in words:
+                if x < 395:
+                    tempList = word.split("e")
+                    word = tempList[0]
+                    # WARNING: We are hard coding the times 100 which is 
+                    # converting scientific notation to normal
+                    dict[(x, y)] = float(word) * 100
+                    x += 1
+            x = 0
+            y += 1
+    return dict
                 
 
 
@@ -125,7 +140,7 @@ def main():
 
     # function to map elevation points to a dictionary of pixels and
     # corresponding elevation. Returns a dictionary
-    #elevationMap = mapElevation(elevationFile)
+    elevationMap = mapElevation(elevationFile)
 
     # function to generate a deque object of the locations to visit. 
     # returns a deque object
