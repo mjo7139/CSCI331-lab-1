@@ -329,25 +329,54 @@ def generatePath(terrainMap, elevationMap, destinations):
         route.append(nextLeg(terrainMap, elevationMap, pos, target))
         # we must now continue the race from our new position which was our target
         pos = target
-    print(route)
     return route
-
-
-
-
-# - / - / - / - / - / - / - / calculatePathLength / - / - / - / - / - / - / - /
-
-#def calculatePathLength(path): 
-    # Each pixel corresponds to an area of
-    # 10.29 m in longitude (X) 
-    # 7.55 m in latitude (Y)
 
 # - / - / - / - / - / - / - / generateOutputImage / - / - / - / - / - / - / - /
 
-#def generateOutputImage(path, image, outputImageFilename): 
+def drawPoints(destinations, newImage):
+    while len(destinations) > 0:
+        draw = destinations.pop()
+        newImage.putpixel(draw, (255, 0, 0))
+        print("hi")
+    return newImage
+
+
+def generateOutputImage(path, image, outputImageFilename, destinations, elevationMap): 
     # You should output an image of the input map with the optimal path
     #  drawn on top of it. This path should be 1 pixel wide and have the
     #  RGB value: #a146dd (161, 70, 221) 
+
+    newImage = image.copy()
+    total = 0
+
+    # path is a deque of deque objects
+    # popping from the top will give us our first leg
+    leg = path.pop()
+    while len(path) > 0:
+        draw = leg.pop()
+        newImage.putpixel(draw, (161, 70, 221))
+
+        a = draw
+
+        draw = leg.pop()
+        newImage.putpixel(draw, (161, 70, 221))
+
+        b = draw
+        total += get3Dist(a, b, elevationMap)
+        while len(leg) > 0:
+            draw = leg.pop()
+            newImage.putpixel(draw, (161, 70, 221))
+            a = b
+            b = draw
+            total += get3Dist(a, b, elevationMap)
+
+        leg = path.pop()
+        
+    # this is entirely for debugging purposes
+    #newImage = drawPoints(destinations, newImage)
+
+    newImage.save(outputImageFilename)
+    return total
 
 # - / - / - / - / - / - / - / main / - / - / - / - / - / - / - /
 
@@ -386,20 +415,19 @@ def main():
     # function to generate a deque object of the locations to visit. 
     # returns a deque object
     route = generateRoute(pathFile) 
+    route2 = route.copy()
 
     # the main function which will generate the ideal path to follow using
     # a*. returns a deque object of the pixels visited, in order
     path = generatePath(terrainMap, elevationMap, route)
+    path2 = path.copy()
 
-    # function to calculate the total path length to the terminal
-    #pathLength = calulatePathLength(path)
-    #print(pathLength)
+    # function to calculate the total path length to the terminal and which 
+    # takes the orginial image and creates a new image with the path drawn over top of it
+    pathLength = generateOutputImage(path2, image, outputImageFilename, route2, elevationMap)
+    print(pathLength)
 
-    # function which takes the orginial image and creates a new image
-    # with the path drawn over top of it
-    #generateOutputImage(path, image, outputImageFilename)
-
-    print(f"Time taken to run code was {end-start} seconds")
+    #print(f"Time taken to run code was {end-start} seconds")
 
 
 
