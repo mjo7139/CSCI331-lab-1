@@ -1,7 +1,6 @@
 import sys
 from PIL import Image
-import time
-import matplotlib.pyplot as plt
+#import time
 from collections import deque
 import heapq
 import math
@@ -37,7 +36,7 @@ def mapTerrain(image):
 
     image = image.convert("RGB")
     im = image.load()
-    image.save("debug_image.png")
+    #image.save("debug_image.png")
     dict = {}
     tempCost = None
     tempColor = None
@@ -166,7 +165,8 @@ def newPoint(terrainMap, elevationMap, state, newPointPos):
 
 
     heapq.heappush(state[3], ( (newPoint[2]+newPoint[3]), (newPointPos)))
-    state[4].add(newPoint)
+    #state[4].add(newPoint)
+    state[4][newPoint[0]] = newPoint
     state[2].add(newPointPos)
     return state
 
@@ -176,20 +176,22 @@ def checkReplicte(state, neighborPos, elevationMap, terrainMap):
     # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
 
     # returns a tuple of state
-    for pixel in state[4]:
-        if pixel[0] == neighborPos:
-            newG = (state[0][2]) + (terrainMap[neighborPos] * get3Dist(state[0][0], neighborPos, elevationMap))
-            newH = get3Dist(neighborPos, state[1], elevationMap)
-            newF = newG + newH
-            if (pixel[2]+pixel[3]) > newF: 
-                state[4].remove(pixel)
-                state[4].add((neighborPos, state[0], newG, newH))
-                state[3].remove((pixel[2]+pixel[3], pixel[0]))
-                state[3].append((newF, neighborPos))
-                heapq.heapify(state[3])
-                return state
-            else:
-                return state
+    #for pixel in state[4]:
+    #    if pixel[0] == neighborPos:
+    pixel = state[4][neighborPos]
+    newG = (state[0][2]) + (terrainMap[neighborPos] * get3Dist(state[0][0], neighborPos, elevationMap))
+    newH = get3Dist(neighborPos, state[1], elevationMap)
+    newF = newG + newH
+    if (pixel[2]+pixel[3]) > newF: 
+        #state[4].remove(pixel)
+        #state[4].add((neighborPos, state[0], newG, newH))
+        state[4][neighborPos] = (neighborPos, state[0], newG, newH)
+        state[3].remove((pixel[2]+pixel[3], pixel[0]))
+        state[3].append((newF, neighborPos))
+        heapq.heapify(state[3])
+        return state
+    else:
+        return state
             
 
     print("Matt Error: LOOKING FOR NONEXISTANT PIXEL")
@@ -247,6 +249,7 @@ def step1(terrainMap, elevationMap, state):
     west = (west[0], west[1] - 1)
     state = considerNeighbor(terrainMap, elevationMap, state, west)
 
+    
     return state
 
 def step2(state):
@@ -258,13 +261,15 @@ def step2(state):
     # find the next pixel in the tupleset
     # -------- TO BE OPTIMIZED --------------
     # yes i know iterating over a set is slow but were gonna deal with it for now
-    for pixel in state[4]:
-        if pixel[0] == nextUp[1]:
-            state[0] = pixel
-            return state
-        
-    print("Matt's Error: couldnt find next stepping pixel")
-    return
+    #for pixel in state[4]:
+    #    if pixel[0] == nextUp[1]:
+    #        state[0] = pixel
+    #        return state
+
+    state[0] = state[4][nextUp[1]]
+    return state
+    #print("Matt's Error: couldnt find next stepping pixel")
+    #return
 
 def nextLeg(terrainMap, elevationMap, pos, target):
     # should return a deque of the final path taken from point A to point B
@@ -273,7 +278,7 @@ def nextLeg(terrainMap, elevationMap, pos, target):
     check = set()
     #                                         [0]       [1]     [2]     [3]
     # a set of tuples representing pixels (position, parent, g value, h value)
-    tupleSet = set()
+    tupleSet = dict()
     #                                         [0]       [1]   
     # a heap of tuples representing pixels (f value, position)
     posQ = []
@@ -281,7 +286,7 @@ def nextLeg(terrainMap, elevationMap, pos, target):
     # lets add the starting location to our structures
     check.add(pos)
     curPixel = (pos, None, 0, get3Dist(pos, target, elevationMap))
-    tupleSet.add(curPixel)
+    tupleSet[curPixel[0]] = curPixel
 
     #                                    [0]       [1]      [2]    [3]     [4]     [5]
     # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
@@ -337,7 +342,6 @@ def drawPoints(destinations, newImage):
     while len(destinations) > 0:
         draw = destinations.pop()
         newImage.putpixel(draw, (255, 0, 0))
-        print("hi")
     return newImage
 
 
@@ -351,8 +355,9 @@ def generateOutputImage(path, image, outputImageFilename, destinations, elevatio
 
     # path is a deque of deque objects
     # popping from the top will give us our first leg
-    leg = path.pop()
+    
     while len(path) > 0:
+        leg = path.pop()
         draw = leg.pop()
         newImage.putpixel(draw, (161, 70, 221))
 
@@ -370,18 +375,17 @@ def generateOutputImage(path, image, outputImageFilename, destinations, elevatio
             b = draw
             total += get3Dist(a, b, elevationMap)
 
-        leg = path.pop()
         
     # this is entirely for debugging purposes
     #newImage = drawPoints(destinations, newImage)
 
-    newImage.save(outputImageFilename)
+    newImage.save(outputImageFilename, "PNG")
     return total
 
 # - / - / - / - / - / - / - / main / - / - / - / - / - / - / - /
 
 def main():
-    start = time.time()
+    #start = time.time()
     args = sys.argv[1:]
 
 
@@ -406,7 +410,7 @@ def main():
     # function to map terrain image file to a dictionary of pixels and
     # corresponding terrain difficulty. Returns a dictionary
     terrainMap = mapTerrain(image)
-    end = time.time()
+    #end = time.time()
 
     # function to map elevation points to a dictionary of pixels and
     # corresponding elevation. Returns a dictionary
@@ -425,7 +429,7 @@ def main():
     # function to calculate the total path length to the terminal and which 
     # takes the orginial image and creates a new image with the path drawn over top of it
     pathLength = generateOutputImage(path2, image, outputImageFilename, route2, elevationMap)
-    print(pathLength)
+    print(str(pathLength))
 
     #print(f"Time taken to run code was {end-start} seconds")
 
