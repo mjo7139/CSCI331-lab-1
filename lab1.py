@@ -22,8 +22,8 @@ def mapTerrain(image):
     (2, 136, 40):1.6,
     # Impassible vegetation	#054918 (5,73,24)           999
     (5, 73, 24):999,
-    # Lake/Swamp/Marsh	        #0000FF (0,0,255)           2
-    (0, 0, 255):2,
+    # Lake/Swamp/Marsh	        #0000FF (0,0,255)           5
+    (0, 0, 255):5,
     # Paved road	            #473303 (71,51,3)           1
     (71, 51, 3):1,
     # Footpath	                #000000 (0,0,0)             1.1
@@ -75,9 +75,12 @@ def mapElevation(elevationFile):
                 if x < 395:
                     tempList = word.split("e")
                     word = tempList[0]
+                    exp = tempList[1]
+                    exp = exp.strip('+')
+                    exp = float(exp)
                     # WARNING: We are hard coding the times 100 which is 
                     # converting scientific notation to normal
-                    dict[(x, y)] = float(word) * 100
+                    dict[(x, y)] = float(word) * math.pow(10, exp)
                     x += 1
             x = 0
             y += 1
