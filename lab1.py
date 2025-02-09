@@ -131,6 +131,27 @@ def get3Dist(pixelA, pixelB, elevationMap):
     dist = math.sqrt(sum1 + sum2 + sum3)
     return dist
 
+def retrace(state): 
+    #                                    [0]       [1]      [2]    [3]     [4]     [5]
+    # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
+    
+    curPix = state[0]
+    parentPix = curPix[1]
+    # add the final location to the path, this will be the last location 
+    # popped from the path later
+    state[5].append(curPix[0])
+    
+    while parentPix is not None:
+        # now lets add the parent location
+        state[5].append(parentPix[0])
+        # set the parent to the parent of the one we just added
+        parentPix = parentPix[1]
+        # we continue this until we get back to the start which has a parent of none
+
+    # returns the state
+    return state
+
+
 def newPoint(terrainMap, elevationMap, state, newPointPos): 
     #                                    [0]       [1]      [2]    [3]     [4]     [5]
     # a tuple representing our state (curPixel, targetPos, check, posQ, tupleSet, path)
@@ -282,7 +303,7 @@ def nextLeg(terrainMap, elevationMap, pos, target):
         #print(state[0])
 
     # retrace the path we took
-    #state[5] = retracePath(state)
+    state = retrace(state)
 
     # return the path
     return state[5]
@@ -303,12 +324,12 @@ def generatePath(terrainMap, elevationMap, destinations):
     
     while len(destinations) >= 1:
         target = destinations.pop()
-        print(target)
+        
         # find the optimal path for this leg and add it to the route
-        route.appendleft(nextLeg(terrainMap, elevationMap, pos, target))
+        route.append(nextLeg(terrainMap, elevationMap, pos, target))
         # we must now continue the race from our new position which was our target
         pos = target
-
+    print(route)
     return route
 
 
